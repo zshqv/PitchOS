@@ -212,3 +212,77 @@ class PitchOSReport(FPDF):
         self.multi_cell(0, 5, note, align="L")
         self.set_text_color(0, 0, 0)
         self.ln(5)
+
+    def render_dcf_section(self, dcf_result: dict, premium: dict) -> None:
+        """DCF summary table + colour-coded premium box + one-line interpretation."""
+        self.render_section_title("DCF Valuation  (5-Year Projection + Terminal Value)")
+
+        # Summary table
+        dcf_rows = [
+            ("PV of Free Cash Flows",   self._fmt(dcf_result.get("total_pv_fcf"))),
+            ("PV of Terminal Value",    self._fmt(dcf_result.get("pv_terminal_value"))),
+            ("DCF Enterprise Value",    self._fmt(dcf_result.get("enterprise_value_dcf"))),
+            ("Implied Share Price",     self._fmt_price(dcf_result.get("implied_share_price"))),
+        ]
+
+        for i, (lbl, val) in enumerate(dcf_rows):
+            self._row(lbl, val, shade=(i % 2 == 0))
+
+        self.ln(5)
+
+        # Colour-coded premium box
+        is_accretive = premium.get("is_accretive")
+        if is_accretive is True:
+            box_color = (220, 245, 220)   # light green
+            label_color = (34, 120, 34)
+        elif is_accretive is False:
+            box_color = (250, 220, 220)   # light red
+            label_color = (160, 30, 30)
+        else:
+            box_color = (240, 240, 240)   # neutral grey
+            label_color = (80, 80, 80)
+
+        # Draw the filled background rectangle
+        box_x = self.get_x()
+        box_y = self.get_y()
+        self.set_fill_color(*box_color)
+        self.rect(box_x, box_y, 180, 14, style="F")
+
+        # Overlay three values inside the box
+        premium_pct   = premium.get("premium_pct")
+        implied_price = self._fmt_price(dcf_result.get("implied_share_price"))
+        prem_label    = premium.get("label", "N/A")
+        pct_str       = f"{premium_pct:+.1f}%" if premium_pct is not None else "N/A"
+
+        self.set_xy(box_x + 4, box_y + 3)
+        self.set_font("Helvetica", "", 8)
+        self.set_text_color(*self.GREY_TEXT)
+        self.cell(40, 5, "DCF Implied Price", align="L")
+        self.cell(40, 5, f"{prem_label} / Discount", align="L")
+        self.cell(40, 5, "Premium %", align="L")
+
+        self.set_xy(box_x + 4, box_y + 8)
+        self.set_font("Helvetica", "B", 9)
+        self.set_text_color(*label_color)
+        self.cell(40, 5, implied_price, align="L")
+        self.cell(40, 5, prem_label, align="L")
+        self.cell(40, 5, pct_str, align="L")
+
+        self.set_text_color(0, 0, 0)
+        self.ln(18)
+
+        # One-line interpretation
+        self.set_font("Helvetica", "I", 8)
+        self.set_text_color(*self.DARK_TEXT)
+        if premium_pct is not None:
+            direction = "premium" if is_accretive else "discount"
+            stance    = "attractive at current terms" if is_accretive else "potentially expensive at current terms"
+            interp = (
+                f"DCF implies a {abs(premium_pct):.1f}% {direction} to the current market price. "
+                f"Deal appears {stance}."
+            )
+        else:
+            interp = "Insufficient data to generate DCF interpretation — verify revenue and share count."
+        self.multi_cell(0, 5, interp, align="L")
+        self.set_text_color(0, 0, 0)
+        self.ln(4)
