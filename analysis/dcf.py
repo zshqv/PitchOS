@@ -40,7 +40,7 @@ def compute_terminal_value(final_year_fcf: float, assumptions: dict) -> float:
     Gordon Growth Model terminal value: TV = FCF × (1 + g) / (WACC − g).
 
     The terminal value captures all value generated beyond the explicit projection period.
-    In most DCF models it represents 60–80% of total enterprise value, so the assumptions
+    In most DCF models it represents 60-80% of total enterprise value, so the assumptions
     here (g and WACC) are the most sensitive levers in the entire model.
     """
     wacc = assumptions.get("wacc", DEFAULT_ASSUMPTIONS["wacc"])
@@ -89,7 +89,7 @@ def compute_dcf_equity_value(
     # Bridge from enterprise value to equity value by subtracting net financial debt.
     equity_value = enterprise_value_dcf - net_debt
 
-    # Implied price per share — the DCF's bottom-line output.
+    # Implied price per share -- the DCF's bottom-line output.
     implied_share_price = (
         equity_value / shares_outstanding if shares_outstanding else None
     )
@@ -134,15 +134,15 @@ def compute_acquisition_premium(current_price: float, implied_price: float) -> d
     """
     Compare the DCF-implied share price to the current market price.
 
-    M&A deals historically close at 20–40% premiums to the target's unaffected share
+    M&A deals historically close at 20-40% premiums to the target's unaffected share
     price (i.e. the price before deal rumours). This function flags whether the DCF
     implied price supports a premium in that range, is above it (potentially overpaying),
     or is actually a discount (deal destroys acquirer value at current market price).
 
     A positive premium_pct means the DCF implies more value than the market currently
-    prices in — consistent with a credible acquisition rationale.
+    prices in -- consistent with a credible acquisition rationale.
     A negative premium_pct means the market already prices in more value than the DCF
-    supports — the acquirer would be paying above intrinsic value.
+    supports -- the acquirer would be paying above intrinsic value.
     """
     if current_price is None or implied_price is None or current_price == 0:
         return {

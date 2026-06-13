@@ -3,7 +3,7 @@ PitchOS entry point.
 
 Parses CLI arguments (acquirer ticker, target ticker, output PDF filename), then
 orchestrates the full pipeline:
-  data fetch → valuation → DCF → acquisition premium → risk flags → PDF render.
+  data fetch -> valuation -> DCF -> acquisition premium -> risk flags -> PDF render.
 """
 
 import argparse
@@ -17,10 +17,10 @@ from output.pdf_builder import build_report
 
 
 BANNER = """
-╔══════════════════════════════════════╗
-║           P I T C H  O S            ║
-║    M&A Pitch Analysis Generator     ║
-╚══════════════════════════════════════╝
++======================================+
+|          P I T C H  O S             |
+|    M&A Pitch Analysis Generator     |
++======================================+
 """
 
 # Fields required for a meaningful DCF; missing any of these causes a graceful exit.
@@ -60,7 +60,7 @@ def parse_args() -> argparse.Namespace:
 def _validate_or_exit(data: dict, label: str) -> None:
     """Exit with a clear message if any critical field is None."""
     missing = [
-        f"  • {field} — {desc}"
+        f"  - {field}: {desc}"
         for field, desc in _CRITICAL_FIELDS.items()
         if data.get(field) is None
     ]
@@ -115,7 +115,7 @@ def main() -> None:
     flags = apply_sector_flags(target_data, flags)
 
     # ── Step 6: Build PDF ─────────────────────────────────────────────────────
-    print(f"[6/6] Building PDF report → {args.output}")
+    print(f"[6/6] Building PDF report -> {args.output}")
     try:
         build_report(
             acquirer_data=acquirer_data,
@@ -138,7 +138,7 @@ def main() -> None:
     print(f"Risk flags : {flag_count}")
     if flag_count:
         for f in flags:
-            print(f"  • {f}")
+            print(f"  - {f}")
 
 
 if __name__ == "__main__":

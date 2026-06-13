@@ -8,7 +8,7 @@ class PitchOSReport(FPDF):
     """A4 portrait PDF report with branded header/footer and structured section layout."""
 
     # Brand palette
-    NAVY      = (26, 43, 74)       # #1a2b4a — header bar
+    NAVY      = (26, 43, 74)       # #1a2b4a -- header bar
     WHITE     = (255, 255, 255)
     GREY_BG   = (232, 232, 232)    # section title band
     GREY_TEXT = (120, 120, 120)    # footer / muted labels
@@ -23,7 +23,7 @@ class PitchOSReport(FPDF):
         super().__init__(orientation="P", unit="mm", format="A4")
         self.set_margins(left=15, top=22, right=15)
         self.set_auto_page_break(auto=True, margin=18)
-        self._deal_label = f"{acquirer_ticker.upper()} → {target_ticker.upper()}"
+        self._deal_label = f"{acquirer_ticker.upper()} -> {target_ticker.upper()}"
 
     # ── fpdf2 page hooks ──────────────────────────────────────────────────────
 
@@ -40,7 +40,7 @@ class PitchOSReport(FPDF):
         self.set_xy(15, 5)
         self.cell(100, 6, "PitchOS  |  M&A Rationale Report", align="L")
 
-        # Right: deal label (acquirer → target)
+        # Right: deal label (acquirer -> target)
         self.set_xy(0, 5)
         self.cell(195, 6, self._deal_label, align="R")
 
@@ -198,7 +198,7 @@ class PitchOSReport(FPDF):
                 note = (
                     f"{tgt_name} trades at a higher EV/EBITDA multiple ({tgt_mult:.1f}x) "
                     f"than {acq_name} ({acq_mult:.1f}x), implying the deal is priced at a premium "
-                    "to the acquirer's own market valuation — synergy delivery is essential to justify the spread."
+                    "to the acquirer's own market valuation -- synergy delivery is essential to justify the spread."
                 )
             else:
                 note = (
@@ -207,7 +207,7 @@ class PitchOSReport(FPDF):
                     "immediately accretive if integration costs remain contained."
                 )
         else:
-            note = "Insufficient data to generate EV/EBITDA commentary — verify financials manually."
+            note = "Insufficient data to generate EV/EBITDA commentary -- verify financials manually."
 
         self.multi_cell(0, 5, note, align="L")
         self.set_text_color(0, 0, 0)
@@ -282,7 +282,7 @@ class PitchOSReport(FPDF):
                 f"Deal appears {stance}."
             )
         else:
-            interp = "Insufficient data to generate DCF interpretation — verify revenue and share count."
+            interp = "Insufficient data to generate DCF interpretation -- verify revenue and share count."
         self.multi_cell(0, 5, interp, align="L")
         self.set_text_color(0, 0, 0)
         self.ln(4)
@@ -295,7 +295,7 @@ class PitchOSReport(FPDF):
         dcf: dict,
         flags: list,
     ) -> None:
-        """3–4 sentence plain-English M&A rationale with analyst recommendation."""
+        """3-4 sentence plain-English M&A rationale with analyst recommendation."""
         self.render_section_title("M&A Rationale Summary")
 
         ev_mult   = valuation.get("ev_ebitda_multiple")
@@ -307,7 +307,7 @@ class PitchOSReport(FPDF):
             f"{acquirer_name} is evaluating an acquisition of {target_name} "
             f"at an EV/EBITDA of {ev_mult:.1f}x." if ev_mult is not None
             else f"{acquirer_name} is evaluating an acquisition of {target_name} "
-                 "(EV/EBITDA unavailable — verify financials)."
+                 "(EV/EBITDA unavailable -- verify financials)."
         )
 
         # Sentence 2: DCF premium/discount
@@ -315,7 +315,7 @@ class PitchOSReport(FPDF):
             direction = "premium" if prem_pct >= 0 else "discount"
             s2 = f"DCF analysis implies a {abs(prem_pct):.1f}% {direction} to the current market price."
         else:
-            s2 = "DCF analysis could not compute an implied premium — revenue or share data missing."
+            s2 = "DCF analysis could not compute an implied premium -- revenue or share data missing."
 
         # Sentence 3: flag count
         s3 = (
@@ -325,11 +325,11 @@ class PitchOSReport(FPDF):
 
         # Sentence 4: analyst recommendation based on flag count
         if flag_count == 0:
-            rec = "Analyst recommendation: proceed to second-stage diligence — no automated flags raised."
+            rec = "Analyst recommendation: proceed to second-stage diligence -- no automated flags raised."
         elif flag_count <= 2:
-            rec = "Analyst recommendation: exercise caution — review flagged items before proceeding."
+            rec = "Analyst recommendation: exercise caution -- review flagged items before proceeding."
         else:
-            rec = "Analyst recommendation: full review required — multiple risk flags warrant detailed scrutiny."
+            rec = "Analyst recommendation: full review required -- multiple risk flags warrant detailed scrutiny."
 
         self.set_font("Helvetica", "", 9)
         self.set_text_color(*self.DARK_TEXT)

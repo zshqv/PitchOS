@@ -28,22 +28,22 @@ def generate_risk_flags(
     if ev_ebitda is not None and ev_ebitda > 15:
         flags.append(
             f"Target trades at elevated multiple ({ev_ebitda:.1f}x EV/EBITDA) "
-            "— deal may be expensive"
+            "-- deal may be expensive"
         )
 
     # 2. Acquisition premium above typical M&A range
-    # Most public deals close at 20–40% premiums. Above 40% the acquirer typically
+    # Most public deals close at 20-40% premiums. Above 40% the acquirer typically
     # needs very large synergies to justify the price paid.
     premium_pct = dcf.get("premium_pct")
     if premium_pct is not None and premium_pct > 40:
         flags.append(
-            f"Premium exceeds typical M&A range (20–40%) — DCF-implied premium is {premium_pct:.1f}%"
+            f"Premium exceeds typical M&A range (20-40%) -- DCF-implied premium is {premium_pct:.1f}%"
         )
 
     # 3. Acquirer leverage
     # Debt-to-EBITDA > 3x signals a stretched balance sheet that may constrain the
     # acquirer's ability to finance the deal with debt (credit markets typically balk
-    # at pro-forma leverage above 4–5x for leveraged buyout-style structures).
+    # at pro-forma leverage above 4-5x for leveraged buyout-style structures).
     acquirer_ebitda = compute_ebitda(acquirer_data)
     acquirer_debt = acquirer_data.get("total_debt")
     if acquirer_ebitda and acquirer_debt and acquirer_ebitda > 0:
@@ -51,7 +51,7 @@ def generate_risk_flags(
         if leverage > 3:
             flags.append(
                 f"Acquirer leverage is {leverage:.1f}x Debt/EBITDA "
-                "— may constrain deal financing"
+                "-- may constrain deal financing"
             )
 
     # 4. Target unprofitability
@@ -60,7 +60,7 @@ def generate_risk_flags(
     target_net_income = target_data.get("net_income")
     if target_net_income is not None and target_net_income < 0:
         flags.append(
-            "Target is unprofitable — integration risk elevated"
+            "Target is unprofitable -- integration risk elevated"
         )
 
     # 5. Tuck-in acquisition (limited synergy scale)
@@ -74,12 +74,12 @@ def generate_risk_flags(
         if size_ratio < 0.10:
             flags.append(
                 f"Target revenue is {size_ratio * 100:.1f}% of acquirer revenue "
-                "— tuck-in acquisition with limited synergy scale"
+                "-- tuck-in acquisition with limited synergy scale"
             )
 
     # 6. Target overvalued vs DCF
     # If the DCF implied price is below the current market price, the model suggests
-    # the market is pricing in more value than the fundamentals support — the acquirer
+    # the market is pricing in more value than the fundamentals support -- the acquirer
     # would be buying above intrinsic value even before a control premium.
     implied_price = dcf.get("implied_share_price")
     current_price = target_data.get("current_price")
@@ -111,18 +111,18 @@ def apply_sector_flags(target_data: dict, flags: list) -> list:
 
     # 1. Weak return on equity
     # For a bank or financial institution, ROE < 8% signals that the business is not
-    # generating adequate returns relative to its equity base — typically a sign of
+    # generating adequate returns relative to its equity base -- typically a sign of
     # poor asset quality, excess capital, or structural cost inefficiency.
     roe = target_data.get("returnOnEquity")  # yfinance surfaces this in .info
     if roe is not None:
         if roe < 0.08:
             flags.append(
-                f"Target ROE is {roe * 100:.1f}% — below 8% threshold, "
+                f"Target ROE is {roe * 100:.1f}% -- below 8% threshold, "
                 "indicating weak profitability for a financial institution"
             )
     else:
-        # ROE not available — may still be calculable manually from financials.
-        flags.append("Target ROE unavailable — verify manually for a financial-sector target")
+        # ROE not available -- may still be calculable manually from financials.
+        flags.append("Target ROE unavailable -- verify manually for a financial-sector target")
 
     # 2. P/B ratio availability check
     # Price-to-Book is the primary relative valuation metric for financials, but
@@ -133,7 +133,7 @@ def apply_sector_flags(target_data: dict, flags: list) -> list:
 
     if market_cap is None or book_value is None:
         flags.append(
-            "P/B ratio unavailable — standard data gap for financials, verify manually"
+            "P/B ratio unavailable -- standard data gap for financials, verify manually"
         )
 
     return flags
