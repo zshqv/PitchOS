@@ -1,1 +1,4 @@
-# PitchOS dependencies — pinned versions added in next step.
+yfinance==0.2.54
+fpdf2==2.8.3
+pandas==2.2.3
+requests==2.32.3
