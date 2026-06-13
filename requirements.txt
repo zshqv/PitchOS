@@ -1,0 +1,1 @@
+# PitchOS dependencies — pinned versions added in next step.
