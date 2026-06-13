@@ -286,3 +286,44 @@ class PitchOSReport(FPDF):
         self.multi_cell(0, 5, interp, align="L")
         self.set_text_color(0, 0, 0)
         self.ln(4)
+
+    def render_risk_flags(self, flags: list) -> None:
+        """Amber-bulleted risk flag list, or green 'no risks' line if empty."""
+        self.render_section_title("Automated Deal Risk Flags")
+
+        if not flags:
+            # Green 'all clear' line
+            self.set_font("Helvetica", "B", 9)
+            self.set_text_color(34, 120, 34)
+            self.cell(0, 7, "  No material deal risks identified by automated screen.",
+                      new_x="LMARGIN", new_y="NEXT", align="L")
+            self.set_text_color(0, 0, 0)
+        else:
+            for flag in flags:
+                row_y = self.get_y()
+                row_x = self.get_x()
+
+                # Small amber/orange filled square as bullet indicator
+                self.set_fill_color(230, 140, 30)   # amber
+                self.rect(row_x, row_y + 2, 3, 3, style="F")
+
+                # Flag text, indented past the bullet
+                self.set_xy(row_x + 6, row_y)
+                self.set_font("Helvetica", "", 8.5)
+                self.set_text_color(*self.DARK_TEXT)
+                self.multi_cell(0, 6, flag, align="L")
+                self.ln(1)
+
+        self.set_text_color(0, 0, 0)
+        self.ln(2)
+
+        # Analyst disclaimer footnote
+        self.set_font("Helvetica", "I", 7)
+        self.set_text_color(*self.GREY_TEXT)
+        self.multi_cell(
+            0, 4,
+            "Flags are algorithmically generated. Analyst review required before distribution.",
+            align="L",
+        )
+        self.set_text_color(0, 0, 0)
+        self.ln(4)
