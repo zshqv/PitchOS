@@ -134,3 +134,81 @@ class PitchOSReport(FPDF):
             self._row(lbl, val, shade=(i % 2 == 0))
 
         self.ln(5)
+
+    def render_valuation_section(self, acquirer_val: dict, target_val: dict,
+                                  acquirer_data: dict, target_data: dict) -> None:
+        """Side-by-side EBITDA / EV / EV-EBITDA table with brief commentary."""
+        self.render_section_title("Valuation Bridge  (EV / EBITDA)")
+
+        acq_name = (acquirer_data.get("ticker") or "Acquirer").upper()
+        tgt_name  = (target_data.get("ticker") or "Target").upper()
+
+        # Header row
+        self.set_fill_color(*self.NAVY)
+        self.set_text_color(*self.WHITE)
+        self.set_font("Helvetica", "B", 9)
+        col_w = [70, 55, 55]
+        self.cell(col_w[0], 7, "Metric", border=1, new_x="RIGHT", new_y="TOP",
+                  align="C", fill=True)
+        self.cell(col_w[1], 7, acq_name, border=1, new_x="RIGHT", new_y="TOP",
+                  align="C", fill=True)
+        self.cell(col_w[2], 7, tgt_name, border=1, new_x="LMARGIN", new_y="NEXT",
+                  align="C", fill=True)
+        self.set_text_color(0, 0, 0)
+
+        # Data rows
+        metrics = [
+            ("EBITDA",
+             self._fmt(acquirer_val.get("ebitda")),
+             self._fmt(target_val.get("ebitda"))),
+            ("Enterprise Value",
+             self._fmt(acquirer_val.get("enterprise_value")),
+             self._fmt(target_val.get("enterprise_value"))),
+            ("EV / EBITDA Multiple",
+             f"{acquirer_val.get('ev_ebitda_multiple') or 'N/A'}x"
+             if acquirer_val.get("ev_ebitda_multiple") is not None else "N/A",
+             f"{target_val.get('ev_ebitda_multiple') or 'N/A'}x"
+             if target_val.get("ev_ebitda_multiple") is not None else "N/A"),
+        ]
+
+        for i, (metric, acq_v, tgt_v) in enumerate(metrics):
+            shade = (i % 2 == 0)
+            bg = (246, 246, 246) if shade else self.WHITE
+            self.set_fill_color(*bg)
+            self.set_font("Helvetica", "", 9)
+            self.set_text_color(*self.DARK_TEXT)
+            self.cell(col_w[0], 7, metric, border=1, new_x="RIGHT", new_y="TOP",
+                      align="L", fill=True)
+            self.set_font("Helvetica", "B", 9)
+            self.cell(col_w[1], 7, acq_v, border=1, new_x="RIGHT", new_y="TOP",
+                      align="C", fill=True)
+            self.cell(col_w[2], 7, tgt_v, border=1, new_x="LMARGIN", new_y="NEXT",
+                      align="C", fill=True)
+
+        self.ln(4)
+
+        # Two-line commentary
+        acq_mult = acquirer_val.get("ev_ebitda_multiple")
+        tgt_mult  = target_val.get("ev_ebitda_multiple")
+        self.set_font("Helvetica", "I", 8)
+        self.set_text_color(*self.GREY_TEXT)
+
+        if acq_mult is not None and tgt_mult is not None:
+            if tgt_mult > acq_mult:
+                note = (
+                    f"{tgt_name} trades at a higher EV/EBITDA multiple ({tgt_mult:.1f}x) "
+                    f"than {acq_name} ({acq_mult:.1f}x), implying the deal is priced at a premium "
+                    "to the acquirer's own market valuation — synergy delivery is essential to justify the spread."
+                )
+            else:
+                note = (
+                    f"{tgt_name} trades at a lower EV/EBITDA multiple ({tgt_mult:.1f}x) "
+                    f"than {acq_name} ({acq_mult:.1f}x), suggesting the acquisition could be "
+                    "immediately accretive if integration costs remain contained."
+                )
+        else:
+            note = "Insufficient data to generate EV/EBITDA commentary — verify financials manually."
+
+        self.multi_cell(0, 5, note, align="L")
+        self.set_text_color(0, 0, 0)
+        self.ln(5)
