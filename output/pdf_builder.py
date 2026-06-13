@@ -287,6 +287,56 @@ class PitchOSReport(FPDF):
         self.set_text_color(0, 0, 0)
         self.ln(4)
 
+    def render_rationale_summary(
+        self,
+        acquirer_name: str,
+        target_name: str,
+        valuation: dict,
+        dcf: dict,
+        flags: list,
+    ) -> None:
+        """3–4 sentence plain-English M&A rationale with analyst recommendation."""
+        self.render_section_title("M&A Rationale Summary")
+
+        ev_mult   = valuation.get("ev_ebitda_multiple")
+        prem_pct  = dcf.get("premium_pct")
+        flag_count = len(flags)
+
+        # Sentence 1: deal overview with multiple
+        s1 = (
+            f"{acquirer_name} is evaluating an acquisition of {target_name} "
+            f"at an EV/EBITDA of {ev_mult:.1f}x." if ev_mult is not None
+            else f"{acquirer_name} is evaluating an acquisition of {target_name} "
+                 "(EV/EBITDA unavailable — verify financials)."
+        )
+
+        # Sentence 2: DCF premium/discount
+        if prem_pct is not None:
+            direction = "premium" if prem_pct >= 0 else "discount"
+            s2 = f"DCF analysis implies a {abs(prem_pct):.1f}% {direction} to the current market price."
+        else:
+            s2 = "DCF analysis could not compute an implied premium — revenue or share data missing."
+
+        # Sentence 3: flag count
+        s3 = (
+            f"{flag_count} risk flag{'s were' if flag_count != 1 else ' was'} "
+            "identified by automated screening."
+        )
+
+        # Sentence 4: analyst recommendation based on flag count
+        if flag_count == 0:
+            rec = "Analyst recommendation: proceed to second-stage diligence — no automated flags raised."
+        elif flag_count <= 2:
+            rec = "Analyst recommendation: exercise caution — review flagged items before proceeding."
+        else:
+            rec = "Analyst recommendation: full review required — multiple risk flags warrant detailed scrutiny."
+
+        self.set_font("Helvetica", "", 9)
+        self.set_text_color(*self.DARK_TEXT)
+        self.multi_cell(0, 6, f"{s1} {s2} {s3} {rec}", align="L")
+        self.set_text_color(0, 0, 0)
+        self.ln(4)
+
     def render_risk_flags(self, flags: list) -> None:
         """Amber-bulleted risk flag list, or green 'no risks' line if empty."""
         self.render_section_title("Automated Deal Risk Flags")
@@ -327,3 +377,38 @@ class PitchOSReport(FPDF):
         )
         self.set_text_color(0, 0, 0)
         self.ln(4)
+
+
+# ── public entry point ────────────────────────────────────────────────────────
+
+def build_report(
+    acquirer_data: dict,
+    target_data: dict,
+    acquirer_val: dict,
+    target_val: dict,
+    target_dcf: dict,
+    premium: dict,
+    flags: list,
+    output_path: str,
+) -> None:
+    """Assemble and save the full PitchOS PDF by calling all render methods in order."""
+    acq_ticker = acquirer_data.get("ticker", "ACQ")
+    tgt_ticker  = target_data.get("ticker", "TGT")
+    acq_name    = acquirer_data.get("company_name") or acq_ticker
+    tgt_name    = target_data.get("company_name") or tgt_ticker
+
+    # Merge DCF output and premium into one dict for sections that need both
+    dcf_with_premium = {**target_dcf, **premium}
+
+    pdf = PitchOSReport(acq_ticker, tgt_ticker)
+    pdf.add_page()
+
+    # Section order mirrors a standard pitch book structure
+    pdf.render_company_snapshot(acquirer_data, "Acquirer")
+    pdf.render_company_snapshot(target_data, "Target")
+    pdf.render_valuation_section(acquirer_val, target_val, acquirer_data, target_data)
+    pdf.render_dcf_section(target_dcf, premium)
+    pdf.render_rationale_summary(acq_name, tgt_name, target_val, dcf_with_premium, flags)
+    pdf.render_risk_flags(flags)
+
+    pdf.output(output_path)
