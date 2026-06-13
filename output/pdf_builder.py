@@ -1,6 +1,7 @@
 """Builds and writes the PDF pitch report using fpdf2, assembling all analysis sections."""
 
 from fpdf import FPDF
+from analysis.valuation import compute_ebitda
 
 
 class PitchOSReport(FPDF):
@@ -67,3 +68,69 @@ class PitchOSReport(FPDF):
                   align="L", fill=True)
         self.ln(2)
         self.set_text_color(0, 0, 0)
+
+    # ── formatting helpers ────────────────────────────────────────────────────
+
+    @staticmethod
+    def _fmt(value, prefix: str = "$", suffix: str = "") -> str:
+        """Format a numeric value as $XB / $XM / $XK, or 'N/A' if None."""
+        if value is None:
+            return "N/A"
+        v = float(value)
+        if abs(v) >= 1e12:
+            return f"{prefix}{v / 1e12:.2f}T{suffix}"
+        if abs(v) >= 1e9:
+            return f"{prefix}{v / 1e9:.2f}B{suffix}"
+        if abs(v) >= 1e6:
+            return f"{prefix}{v / 1e6:.2f}M{suffix}"
+        return f"{prefix}{v:,.2f}{suffix}"
+
+    @staticmethod
+    def _fmt_price(value) -> str:
+        """Format a per-share price as $X.XX."""
+        if value is None:
+            return "N/A"
+        return f"${float(value):.2f}"
+
+    def _row(self, label: str, value: str, shade: bool = False) -> None:
+        """Render one label/value row in the two-column table style."""
+        if shade:
+            self.set_fill_color(246, 246, 246)
+        else:
+            self.set_fill_color(*self.WHITE)
+
+        self.set_font("Helvetica", "", 9)
+        self.set_text_color(*self.GREY_TEXT)
+        self.cell(self.COL_LABEL, 7, label, border="B", new_x="RIGHT", new_y="TOP",
+                  align="L", fill=True)
+
+        self.set_font("Helvetica", "B", 9)
+        self.set_text_color(*self.DARK_TEXT)
+        self.cell(self.COL_VALUE, 7, value, border="B", new_x="LMARGIN", new_y="NEXT",
+                  align="L", fill=True)
+
+        self.set_text_color(0, 0, 0)
+
+    # ── content sections ──────────────────────────────────────────────────────
+
+    def render_company_snapshot(self, financials: dict, label: str) -> None:
+        """Two-column mini table showing key financial metrics for one company."""
+        name = financials.get("company_name") or financials.get("ticker", "Unknown")
+        self.render_section_title(f"{label}: {name}")
+
+        ebitda = compute_ebitda(financials)
+
+        rows = [
+            ("Company Name",  name),
+            ("Ticker",        financials.get("ticker") or "N/A"),
+            ("Market Cap",    self._fmt(financials.get("market_cap"))),
+            ("Revenue",       self._fmt(financials.get("revenue"))),
+            ("EBITDA",        self._fmt(ebitda)),
+            ("Total Debt",    self._fmt(financials.get("total_debt"))),
+            ("Current Price", self._fmt_price(financials.get("current_price"))),
+        ]
+
+        for i, (lbl, val) in enumerate(rows):
+            self._row(lbl, val, shade=(i % 2 == 0))
+
+        self.ln(5)
