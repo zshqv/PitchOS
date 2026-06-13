@@ -91,3 +91,49 @@ def generate_risk_flags(
             )
 
     return flags
+
+
+def apply_sector_flags(target_data: dict, flags: list) -> list:
+    """
+    Extend the flags list with sector-specific checks for financial-sector targets.
+
+    Standard DCF and EV/EBITDA metrics are less meaningful for banks and financial
+    institutions: they carry regulatory capital constraints, mark-to-market balance
+    sheets, and are better valued on P/B and ROE frameworks. This function mirrors
+    the sector-aware flag pattern from BriefOS and appends finance-specific checks
+    only when the target operates in the relevant sector.
+    """
+    sector = target_data.get("sector", "")
+
+    # Only apply these checks for financial-sector companies.
+    if sector not in ("Financial Services", "Banks"):
+        return flags
+
+    # 1. Weak return on equity
+    # For a bank or financial institution, ROE < 8% signals that the business is not
+    # generating adequate returns relative to its equity base — typically a sign of
+    # poor asset quality, excess capital, or structural cost inefficiency.
+    roe = target_data.get("returnOnEquity")  # yfinance surfaces this in .info
+    if roe is not None:
+        if roe < 0.08:
+            flags.append(
+                f"Target ROE is {roe * 100:.1f}% — below 8% threshold, "
+                "indicating weak profitability for a financial institution"
+            )
+    else:
+        # ROE not available — may still be calculable manually from financials.
+        flags.append("Target ROE unavailable — verify manually for a financial-sector target")
+
+    # 2. P/B ratio availability check
+    # Price-to-Book is the primary relative valuation metric for financials, but
+    # yfinance does not always expose book value directly in .info. Flag when it
+    # cannot be confirmed so the analyst knows to source it from the 10-K or Bloomberg.
+    market_cap = target_data.get("market_cap")
+    book_value = target_data.get("bookValue")  # yfinance key in .info, per-share figure
+
+    if market_cap is None or book_value is None:
+        flags.append(
+            "P/B ratio unavailable — standard data gap for financials, verify manually"
+        )
+
+    return flags
