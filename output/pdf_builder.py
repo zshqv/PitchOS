@@ -132,6 +132,7 @@ body {
     page-break-before: always;
 }
 
+/* spacing: tightened cover header and flag card padding */
 /* ── Cover ─────────────────────────────────────────────────── */
 .cover-header {
     background: #1a1a2e;
