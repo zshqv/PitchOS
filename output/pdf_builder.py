@@ -111,6 +111,7 @@ def _rationale(acq_name, tgt_name, target_val, dcf_with_premium, flags) -> str:
 # ── CSS (module-level constant to avoid f-string brace escaping) ──────────────
 
 _CSS = """
+/* v2.0 — RedFlag-aligned visual system */
 @page {
     size: A4;
     margin: 18mm 15mm;
