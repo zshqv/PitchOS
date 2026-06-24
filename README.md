@@ -2,6 +2,9 @@
 
 PitchOS -- Automated M&A rationale generator. Takes two tickers, outputs a one-page deal brief.
 
+## Preview
+![PitchOS Report Preview](docs/pitchos_preview.png)
+
 ---
 
 ## Ecosystem
